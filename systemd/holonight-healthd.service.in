@@ -1,0 +1,14 @@
+[Unit]
+Description=HoloNight System Maintenance & Health Monitoring Daemon
+Documentation=file:///usr/share/doc/holonight/README.md
+PartOf=holonight-services.target
+
+[Service]
+Type=simple
+ExecStart=@CMAKE_INSTALL_FULL_BINDIR@/holonight-healthd
+Restart=on-failure
+RestartSec=5s
+Slice=system.slice
+
+[Install]
+WantedBy=default.target

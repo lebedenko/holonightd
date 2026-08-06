@@ -1,0 +1,164 @@
+version: "3"
+
+vars:
+  BUILD_DIR: build
+  RELEASE_BUILD_DIR: build-release
+  NPROC:
+    sh: nproc
+
+tasks:
+  default:
+    desc: Build the project
+    cmds:
+      - task: build
+
+  configure:
+    desc: Configure CMake (debug, no tests)
+    cmds:
+      - cmake -B {{.BUILD_DIR}} -G Ninja -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=OFF -DENABLE_COVERAGE=OFF -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -S .
+      - ln -sf {{.BUILD_DIR}}/compile_commands.json .
+
+  configure:release:
+    desc: Configure (Release)
+    cmds:
+      - |
+        if [ -f "{{.RELEASE_BUILD_DIR}}/CMakeCache.txt" ] && ! grep -Fxq "CMAKE_HOME_DIRECTORY:INTERNAL={{.TASKFILE_DIR}}" "{{.RELEASE_BUILD_DIR}}/CMakeCache.txt"; then
+          cmake -E echo "Removing stale {{.RELEASE_BUILD_DIR}} CMake cache from another source directory"
+          cmake -E rm -rf "{{.RELEASE_BUILD_DIR}}"
+        fi
+      - cmake -S . -B {{.RELEASE_BUILD_DIR}} -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON
+
+  configure-tests:
+    desc: Configure CMake with tests enabled
+    cmds:
+      - cmake -B {{.BUILD_DIR}} -G Ninja -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=ON -DENABLE_COVERAGE=OFF -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -S .
+      - ln -sf {{.BUILD_DIR}}/compile_commands.json .
+
+  configure-coverage:
+    desc: Configure CMake with tests and coverage enabled
+    cmds:
+      - cmake -B {{.BUILD_DIR}} -G Ninja -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=ON -DENABLE_COVERAGE=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -S .
+      - ln -sf {{.BUILD_DIR}}/compile_commands.json .
+
+  build:
+    desc: Build the project
+    deps: [configure]
+    cmds:
+      - cmake --build {{.BUILD_DIR}} -j{{.NPROC}}
+
+  build:release:
+    desc: Build (Release)
+    deps: [configure:release]
+    cmds:
+      - cmake --build {{.RELEASE_BUILD_DIR}} -j{{.NPROC}}
+
+  run:
+    desc: Build and run holonightd once with example config
+    deps: [build]
+    cmds:
+      - ./{{.BUILD_DIR}}/apps/healthd/holonight-healthd --once --config config/holonightd.example.toml
+
+
+  install:local:
+    desc: Build and install to ~/.local
+    cmds:
+      - cmake -S . -B {{.RELEASE_BUILD_DIR}} -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON -DCMAKE_INSTALL_PREFIX=$HOME/.local
+      - cmake --build {{.RELEASE_BUILD_DIR}} -j{{.NPROC}}
+      - cmake --install {{.RELEASE_BUILD_DIR}} --prefix $HOME/.local
+
+  install:system:
+    desc: Install to /usr (requires sudo)
+    cmds:
+      - cmake -S . -B {{.RELEASE_BUILD_DIR}} -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON -DCMAKE_INSTALL_PREFIX=/usr
+      - cmake --build {{.RELEASE_BUILD_DIR}} -j{{.NPROC}}
+      - sudo cmake --install {{.RELEASE_BUILD_DIR}} --prefix /usr
+
+  test:
+    desc: Build with tests and run ctest
+    deps: [configure-tests]
+    cmds:
+      - cmake --build {{.BUILD_DIR}} -j{{.NPROC}}
+      - ctest --test-dir {{.BUILD_DIR}} --output-on-failure
+
+  coverage:
+    desc: Build with coverage and open HTML report
+    deps: [configure-coverage]
+    cmds:
+      - cmake --build {{.BUILD_DIR}} --target coverage
+    generates:
+      - "{{.BUILD_DIR}}/coverage/index.html"
+
+  format:
+    desc: Auto-format source files with clang-format
+    deps: [configure]
+    cmds:
+      - cmake --build {{.BUILD_DIR}} --target format
+
+  format-check:
+    desc: Check formatting without writing changes
+    deps: [configure]
+    cmds:
+      - cmake --build {{.BUILD_DIR}} --target format-check
+
+  tidy:
+    desc: Run clang-tidy
+    deps: [configure-tests]
+    cmds:
+      - cmake --build {{.BUILD_DIR}} --target tidy
+
+  tidy-src:
+    desc: Run clang-tidy on production sources
+    deps: [configure-tests]
+    cmds:
+      - cmake --build {{.BUILD_DIR}} --target tidy-src
+
+  tidy-tests:
+    desc: Run clang-tidy on tests
+    deps: [configure-tests]
+    cmds:
+      - cmake --build {{.BUILD_DIR}} --target tidy-tests
+
+  tidy-container:
+    desc: Run static checks inside the CI container (Docker/Podman) for predictable results
+    cmds:
+      - |
+        if command -v docker >/dev/null 2>&1; then
+          CONTAINER_RUNNER="docker"
+        elif command -v podman >/dev/null 2>&1; then
+          CONTAINER_RUNNER="podman"
+        else
+          echo "ERROR: Neither docker nor podman is available." >&2
+          exit 1
+        fi
+        $CONTAINER_RUNNER run --rm -v "$(pwd):/workspace" -w /workspace ghcr.io/lebedenko/holonightd-ci:latest bash -c "
+          rm -rf build-ci-check &&
+          cmake -B build-ci-check -G Ninja -S . -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DBUILD_TESTS=ON &&
+          cmake --build build-ci-check --target format-check &&
+          cmake --build build-ci-check --target tidy
+        "
+
+  build-ci-image:
+    desc: Build the CI container image locally
+    cmds:
+      - |
+        if command -v docker >/dev/null 2>&1; then
+          CONTAINER_RUNNER="docker"
+        elif command -v podman >/dev/null 2>&1; then
+          CONTAINER_RUNNER="podman"
+        else
+          echo "ERROR: Neither docker nor podman is available." >&2
+          exit 1
+        fi
+        $CONTAINER_RUNNER build -t ghcr.io/lebedenko/holonightd-ci:latest -f Dockerfile.ci .
+
+  clean:
+    desc: Remove the build directory
+    cmds:
+      - rm -rf {{.BUILD_DIR}}
+    prompt: Remove {{.BUILD_DIR}}/ entirely?
+
+  clean-artifacts:
+    desc: Remove ignored local build directories and root log files
+    cmds:
+      - scripts/clean-artifacts.sh --delete
+    prompt: Remove ignored local build directories and root log files?

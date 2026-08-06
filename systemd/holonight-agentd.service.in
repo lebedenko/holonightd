@@ -1,0 +1,14 @@
+[Unit]
+Description=HoloNight AI Agent Activity & Notification Daemon
+Documentation=file:///usr/share/doc/holonight/holonight-agentd.md
+PartOf=holonight-services.target
+
+[Service]
+Type=simple
+ExecStart=@CMAKE_INSTALL_FULL_BINDIR@/holonight-agentd
+Restart=on-failure
+RestartSec=3s
+Slice=app.slice
+
+[Install]
+WantedBy=default.target

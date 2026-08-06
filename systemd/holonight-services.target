@@ -1,0 +1,6 @@
+[Unit]
+Description=HoloNight Background Services Suite
+Wants=holonight-agentd.service holonight-healthd.service
+
+[Install]
+WantedBy=default.target

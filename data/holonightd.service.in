@@ -1,0 +1,21 @@
+[Unit]
+Description=Holonightd Daemon - Lightweight daemon for routine maintenance automation
+Documentation=https://github.com/lebedenko/holonightd
+After=network.target local-fs.target
+
+[Service]
+Type=simple
+ExecStart=@CMAKE_INSTALL_FULL_BINDIR@/holonightd
+Restart=on-failure
+RestartSec=5s
+KillMode=mixed
+
+# Security and sandboxing options
+ProtectSystem=full
+ProtectHome=read-only
+ReadWritePaths=%h/.local/share/holonight %h/.config/holonight
+PrivateTmp=true
+NoNewPrivileges=true
+
+[Install]
+WantedBy=@SYSTEMD_WANTED_BY@

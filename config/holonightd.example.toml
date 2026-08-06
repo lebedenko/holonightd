@@ -1,0 +1,33 @@
+[general]
+interval_seconds = 300
+scan_root = "."
+# log_level = "info"
+commands = [
+
+    "cmake --build build",
+    "ctest --test-dir build --output-on-failure",
+]
+
+[storage]
+warning_threshold = 85.0
+critical_threshold = 95.0
+# mount_points = ["/", "/home"]
+
+[memory]
+some_warning_threshold = 10.0
+full_critical_threshold = 25.0
+meminfo_warning_threshold = 85.0
+
+[database]
+# path = "/var/lib/holonight/events.db"
+retention_days = 30
+max_bytes = 52428800
+max_events = 100000
+
+[systemd]
+flapping_threshold = 3
+flapping_window_seconds = 300
+ignore_units = []
+
+
+
