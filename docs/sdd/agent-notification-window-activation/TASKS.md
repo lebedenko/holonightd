@@ -2,7 +2,7 @@
 
 **Initiative work package:** `ANWA-102`
 **Implementation baseline:** `dbb6ecc6205f964c3c4dc4e2467503ee940dc34f`
-**Depends on:** published and pinned `ANWA-101` (`c2fa018aabb4dc3c9125d9e956237757d2a6975a`)
+**Depends on:** published and pinned `ANWA-101` (`c835d6576ec40c78a36186c54b8c860809ad92c9`)
 
 Complete and commit this work package only in `holonightd`.
 
