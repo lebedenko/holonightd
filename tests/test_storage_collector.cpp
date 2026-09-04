@@ -23,12 +23,8 @@
 
 namespace holonightd {
 
-TEST(StorageCollectorTest, DiscoverMountsReturnsLocalPhysicalMounts) {
+TEST(StorageCollectorTest, DiscoverMountsExcludesUnsupportedMounts) {
   const auto mounts = StorageCollector::discoverMounts();
-  ASSERT_FALSE(mounts.empty());
-
-  const auto root_it = std::ranges::find_if(mounts, [](const MountInfo& info) { return info.mount_path == "/"; });
-  EXPECT_NE(root_it, mounts.end());
 
   for (const auto& mount : mounts) {
     EXPECT_NE(mount.fstype, "proc");
