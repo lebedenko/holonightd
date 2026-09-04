@@ -111,6 +111,74 @@ std::string truncateMessage(std::string_view message, std::size_t max_len = 200)
 
 }  // namespace
 
+NotificationBridge::NotificationBridge(
+#ifdef HOLONIGHTD_HAS_SYSTEMD
+    sd_bus* bus,
+#endif
+    ActivationClient& activation_client)
+    :
+#ifdef HOLONIGHTD_HAS_SYSTEMD
+      bus_(bus),
+#endif
+      activation_client_(activation_client) {
+#ifdef HOLONIGHTD_HAS_SYSTEMD
+  if (bus_ != nullptr) {
+    (void)sd_bus_match_signal(bus_, &action_slot_, "org.freedesktop.Notifications", "/org/freedesktop/Notifications",
+                              "org.freedesktop.Notifications", "ActionInvoked", onActionInvoked, this);
+    (void)sd_bus_match_signal(bus_, &closed_slot_, "org.freedesktop.Notifications", "/org/freedesktop/Notifications",
+                              "org.freedesktop.Notifications", "NotificationClosed", onNotificationClosed, this);
+  }
+#endif
+}
+
+NotificationBridge::~NotificationBridge() {
+#ifdef HOLONIGHTD_HAS_SYSTEMD
+  action_slot_ = sd_bus_slot_unref(action_slot_);
+  closed_slot_ = sd_bus_slot_unref(closed_slot_);
+#endif
+}
+
+void NotificationBridge::handleAction(std::uint32_t notification_id, std::string_view action_key) {
+  if (action_key != "open") {
+    return;
+  }
+  const auto descriptor = bindings_.consume(notification_id);
+  if (descriptor.has_value()) {
+    (void)activation_client_.activate(*descriptor);
+  }
+}
+
+void NotificationBridge::handleClosed(std::uint32_t notification_id) { bindings_.close(notification_id); }
+
+void NotificationBridge::bindNotification(std::uint32_t replaces_id, std::uint32_t notification_id,
+                                          const ActivationDescriptor& descriptor) {
+  bindings_.replace(replaces_id, notification_id, descriptor);
+}
+
+#ifdef HOLONIGHTD_HAS_SYSTEMD
+int NotificationBridge::onActionInvoked(sd_bus_message* message, void* userdata, sd_bus_error* /*error*/) {
+  std::uint32_t notification_id = 0;
+  const char* action_key = nullptr;
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg)
+  const int result = sd_bus_message_read(message, "us", &notification_id, &action_key);
+  if (result >= 0) {
+    static_cast<NotificationBridge*>(userdata)->handleAction(notification_id, action_key != nullptr ? action_key : "");
+  }
+  return result < 0 ? result : 0;
+}
+
+int NotificationBridge::onNotificationClosed(sd_bus_message* message, void* userdata, sd_bus_error* /*error*/) {
+  std::uint32_t notification_id = 0;
+  std::uint32_t reason = 0;
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg)
+  const int result = sd_bus_message_read(message, "uu", &notification_id, &reason);
+  if (result >= 0) {
+    static_cast<NotificationBridge*>(userdata)->handleClosed(notification_id);
+  }
+  return result < 0 ? result : 0;
+}
+#endif
+
 std::uint32_t NotificationBridge::sendNotification(const AgentSession& session, const AgentEvent& event,
                                                    std::uint32_t replaces_id) {
   holonightd::Logger logger(holonightd::LogLevel::Info);
@@ -120,21 +188,15 @@ std::uint32_t NotificationBridge::sendNotification(const AgentSession& session, 
               event.message);
   return replaces_id;
 #else
-  sd_bus* bus_ptr = nullptr;
-  if (sd_bus_open_user(&bus_ptr) < 0) {
-    logger.warn("Could not connect to user D-Bus for desktop notification");
+  if (bus_ == nullptr) {
+    logger.warn("No user D-Bus available for desktop notification");
     return replaces_id;
   }
-  std::unique_ptr<sd_bus, void (*)(sd_bus*)> bus_guard(bus_ptr, [](sd_bus* b_handle) {
-    if (b_handle != nullptr) {
-      sd_bus_unref(b_handle);
-    }
-  });
 
   sd_bus_message* msg_ptr = nullptr;
   int ret_code =
-      sd_bus_message_new_method_call(bus_ptr, &msg_ptr, "org.freedesktop.Notifications",
-                                     "/org/freedesktop/Notifications", "org.freedesktop.Notifications", "Notify");
+      sd_bus_message_new_method_call(bus_, &msg_ptr, "org.freedesktop.Notifications", "/org/freedesktop/Notifications",
+                                     "org.freedesktop.Notifications", "Notify");
   if (ret_code < 0) {
     return replaces_id;
   }
@@ -177,7 +239,7 @@ std::uint32_t NotificationBridge::sendNotification(const AgentSession& session, 
 
   sd_bus_message* reply_ptr = nullptr;
   sd_bus_error bus_error = SD_BUS_ERROR_NULL;
-  ret_code = sd_bus_call(bus_ptr, msg_ptr, 0, &bus_error, &reply_ptr);
+  ret_code = sd_bus_call(bus_, msg_ptr, 500000, &bus_error, &reply_ptr);
   if (ret_code < 0) {
     sd_bus_error_free(&bus_error);
     return replaces_id;
@@ -190,8 +252,14 @@ std::uint32_t NotificationBridge::sendNotification(const AgentSession& session, 
 
   std::uint32_t assigned_id = 0;
   // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg)
-  sd_bus_message_read(reply_ptr, "u", &assigned_id);
+  if (sd_bus_message_read(reply_ptr, "u", &assigned_id) <= 0) {
+    sd_bus_error_free(&bus_error);
+    return replaces_id;
+  }
   sd_bus_error_free(&bus_error);
+  if (assigned_id != 0 && session.activation.has_value()) {
+    bindNotification(replaces_id, assigned_id, *session.activation);
+  }
   return assigned_id;
 #endif
 }

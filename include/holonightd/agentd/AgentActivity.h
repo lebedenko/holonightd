@@ -13,6 +13,18 @@
 
 namespace holonightd::agent {
 
+class ActivationClient;
+class SessionRegistry;
+
+inline constexpr std::size_t kMaximumActivationTitleBytes = 512;
+
+struct ActivationDescriptor {
+  std::vector<std::uint32_t> process_lineage;
+  std::string title_hint;
+
+  [[nodiscard]] bool valid() const { return !process_lineage.empty(); }
+};
+
 enum class AgentState : std::uint8_t {
   Starting,
   Working,
@@ -54,6 +66,10 @@ struct AgentSession {
   std::chrono::system_clock::time_point start_time{std::chrono::system_clock::now()};
   std::chrono::system_clock::time_point last_update_time{std::chrono::system_clock::now()};
   std::uint32_t notification_id{0};  // Active org.freedesktop.Notifications ID
+  std::optional<ActivationDescriptor> activation;
 };
+
+[[nodiscard]] bool activateSession(const SessionRegistry& registry, ActivationClient& client,
+                                   const std::string& session_id);
 
 }  // namespace holonightd::agent

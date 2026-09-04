@@ -101,6 +101,9 @@ add_library(holonight_agent
     agent/ProviderNormalizer.cpp
     agent/SessionRegistry.cpp
     agent/NotificationBridge.cpp
+    agent/NotificationActionBindings.cpp
+    agent/ProcessAncestryReader.cpp
+    agent/ShellActivationClient.cpp
 )
 
 target_include_directories(holonight_agent
@@ -114,6 +117,9 @@ target_link_libraries(holonight_agent
         holonightd_project_warnings
         holonight_logging
 )
+if(TARGET PkgConfig::LIBSYSTEMD)
+    target_link_libraries(holonight_agent PRIVATE PkgConfig::LIBSYSTEMD)
+endif()
 
 # Core aggregation library for backwards-compatibility in tests & builds
 add_library(holonightd_core INTERFACE)
@@ -125,4 +131,3 @@ target_link_libraries(holonightd_core INTERFACE
     holonight_health
     holonight_agent
 )
-

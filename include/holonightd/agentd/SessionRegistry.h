@@ -5,6 +5,7 @@
 #pragma once
 
 #include "holonightd/agentd/AgentActivity.h"
+#include "holonightd/agentd/ProcessAncestryReader.h"
 
 #include <mutex>
 #include <optional>
@@ -15,7 +16,7 @@ namespace holonightd::agent {
 
 class SessionRegistry {
  public:
-  SessionRegistry() = default;
+  explicit SessionRegistry(ProcessAncestryReader ancestry_reader = ProcessAncestryReader{});
 
   std::string registerSession(const std::string& provider, const std::string& session_id, std::uint32_t pid,
                               const std::string& cwd, const nlohmann::json& metadata = {});
@@ -32,6 +33,7 @@ class SessionRegistry {
  private:
   mutable std::mutex mutex_;
   std::unordered_map<std::string, AgentSession> sessions_;
+  ProcessAncestryReader ancestry_reader_;
 };
 
 }  // namespace holonightd::agent

@@ -34,6 +34,9 @@ std::string extractProjectName(const std::string& path_str) {
 
 }  // namespace
 
+SessionRegistry::SessionRegistry(ProcessAncestryReader ancestry_reader)
+    : ancestry_reader_(std::move(ancestry_reader)) {}
+
 std::string SessionRegistry::registerSession(const std::string& provider, const std::string& session_id,
                                              std::uint32_t pid, const std::string& cwd,
                                              const nlohmann::json& metadata) {
@@ -49,6 +52,16 @@ std::string SessionRegistry::registerSession(const std::string& provider, const 
   session.current_state = AgentState::Starting;
   session.start_time = std::chrono::system_clock::now();
   session.last_update_time = session.start_time;
+
+  ActivationDescriptor activation;
+  activation.process_lineage = ancestry_reader_.read(pid);
+  if (metadata.contains("terminal_title") && metadata["terminal_title"].is_string()) {
+    activation.title_hint = metadata["terminal_title"].get<std::string>();
+    activation.title_hint.resize(std::min(activation.title_hint.size(), kMaximumActivationTitleBytes));
+  }
+  if (activation.valid()) {
+    session.activation = std::move(activation);
+  }
 
   if (metadata.contains("window_address") && metadata["window_address"].is_string()) {
     session.window_address = metadata["window_address"].get<std::string>();

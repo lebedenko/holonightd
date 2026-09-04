@@ -4,6 +4,9 @@
 
 #include "holonightd/agentd/AgentActivity.h"
 
+#include "holonightd/agentd/SessionRegistry.h"
+#include "holonightd/agentd/ShellActivationClient.h"
+
 #include <chrono>
 #include <stdexcept>
 
@@ -93,6 +96,14 @@ AgentEvent AgentEvent::fromJson(const nlohmann::json& json_obj) {
     event.metadata = json_obj["metadata"];
   }
   return event;
+}
+
+bool activateSession(const SessionRegistry& registry, ActivationClient& client, const std::string& session_id) {
+  const auto session = registry.getSession(session_id);
+  if (!session.has_value() || !session->activation.has_value() || !session->activation->valid()) {
+    return false;
+  }
+  return client.activate(*session->activation).accepted;
 }
 
 }  // namespace holonightd::agent

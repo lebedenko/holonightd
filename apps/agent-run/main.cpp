@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <iostream>
 #include <memory>
+#include <nlohmann/json.hpp>
 #include <span>
 #include <string>
 #include <sys/wait.h>
@@ -59,6 +60,9 @@ int main(int argc, char** argv) {
   std::string project_name = getProjectName(cwd);
   auto pid = static_cast<uint32_t>(getpid());
   std::string session_id = provider + "-" + std::to_string(pid);
+  nlohmann::json metadata = nlohmann::json::object();
+  metadata["terminal_title"] = provider + " · " + project_name;
+  const std::string metadata_json = metadata.dump();
 
   setTerminalTitle(provider, project_name);
 
@@ -77,7 +81,7 @@ int main(int argc, char** argv) {
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg)
     sd_bus_call_method(bus_ptr, "org.holonight.AgentActivity1", "/org/holonight/AgentActivity1",
                        "org.holonight.AgentActivity1", "RegisterSession", &bus_error, &reply_ptr, "ssuss",
-                       provider.c_str(), session_id.c_str(), pid, cwd.c_str(), "{}");
+                       provider.c_str(), session_id.c_str(), pid, cwd.c_str(), metadata_json.c_str());
     if (reply_ptr != nullptr) {
       sd_bus_message_unref(reply_ptr);
     }

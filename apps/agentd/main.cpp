@@ -7,6 +7,7 @@
 #include "holonightd/agentd/NotificationBridge.h"
 #include "holonightd/agentd/ProviderNormalizer.h"
 #include "holonightd/agentd/SessionRegistry.h"
+#include "holonightd/agentd/ShellActivationClient.h"
 
 #include <atomic>
 #include <chrono>
@@ -26,6 +27,8 @@ std::atomic<bool> g_running{true};
 struct AppContext {
   holonightd::agent::SessionRegistry registry;
   holonightd::Logger logger{holonightd::LogLevel::Info};
+  std::unique_ptr<holonightd::agent::ActivationClient> activation_client;
+  std::unique_ptr<holonightd::agent::NotificationBridge> notification_bridge;
 };
 
 void signalHandler(int sig) {
@@ -109,9 +112,10 @@ int methodPublishEvent(sd_bus_message* msg_ptr, void* userdata, sd_bus_error* /*
   auto sess = ctx->registry.getSession(event.session_id);
 
   if (sess.has_value()) {
-    std::uint32_t notif_id =
-        holonightd::agent::NotificationBridge::sendNotification(*sess, event, sess->notification_id);
-    ctx->registry.updateNotificationId(event.session_id, notif_id);
+    if (ctx->notification_bridge != nullptr) {
+      std::uint32_t notif_id = ctx->notification_bridge->sendNotification(*sess, event, sess->notification_id);
+      ctx->registry.updateNotificationId(event.session_id, notif_id);
+    }
 
     sd_bus* bus_ptr = sd_bus_message_get_bus(msg_ptr);
     if (bus_ptr != nullptr) {
@@ -162,12 +166,28 @@ int methodEndSession(sd_bus_message* msg_ptr, void* userdata, sd_bus_error* /*re
   return sd_bus_reply_method_return(msg_ptr, "b", is_success ? 1 : 0);
 }
 
+int methodActivateSession(sd_bus_message* msg_ptr, void* userdata, sd_bus_error* /*ret_error*/) {
+  const char* session_id = nullptr;
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg)
+  const int result = sd_bus_message_read(msg_ptr, "s", &session_id);
+  if (result < 0) {
+    return result;
+  }
+  auto* ctx = static_cast<AppContext*>(userdata);
+  const bool accepted =
+      ctx->activation_client != nullptr && holonightd::agent::activateSession(ctx->registry, *ctx->activation_client,
+                                                                              session_id != nullptr ? session_id : "");
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg)
+  return sd_bus_reply_method_return(msg_ptr, "b", accepted ? 1 : 0);
+}
+
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays)
 const sd_bus_vtable agent_activity_vtable[] = {
     SD_BUS_VTABLE_START(0),
     SD_BUS_METHOD("RegisterSession", "ssuss", "s", methodRegisterSession, SD_BUS_VTABLE_UNPRIVILEGED),
     SD_BUS_METHOD("PublishEvent", "sssssss", "b", methodPublishEvent, SD_BUS_VTABLE_UNPRIVILEGED),
     SD_BUS_METHOD("EndSession", "ss", "b", methodEndSession, SD_BUS_VTABLE_UNPRIVILEGED),
+    SD_BUS_METHOD("ActivateSession", "s", "b", methodActivateSession, SD_BUS_VTABLE_UNPRIVILEGED),
     SD_BUS_SIGNAL("SessionAdded", "sss", 0),
     SD_BUS_SIGNAL("SessionChanged", "ssss", 0),
     SD_BUS_SIGNAL("SessionRemoved", "ss", 0),
@@ -196,6 +216,9 @@ int main(int /*argc*/, char** /*argv*/) {
       sd_bus_unref(b_handle);
     }
   });
+  context.activation_client = std::make_unique<holonightd::agent::ShellActivationClient>(bus_ptr);
+  context.notification_bridge =
+      std::make_unique<holonightd::agent::NotificationBridge>(bus_ptr, *context.activation_client);
 
   ret_code = sd_bus_add_object_vtable(bus_ptr, nullptr, "/org/holonight/AgentActivity1", "org.holonight.AgentActivity1",
                                       static_cast<const sd_bus_vtable*>(agent_activity_vtable), &context);
