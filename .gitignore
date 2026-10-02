@@ -72,3 +72,6 @@ AGENTS.md
 /build/
 /__pycache__/
 /tooling/__pycache__/
+
+# Python CI launcher bytecode
+**/__pycache__/

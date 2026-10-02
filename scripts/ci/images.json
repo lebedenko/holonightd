@@ -1,0 +1,4 @@
+{
+  "build": "ghcr.io/lebedenko/holonightd-ci@sha256:ef8dae77ff4d06f664649e668885eee96c030e3bdc65a5b8b9ebdca684a37a70",
+  "licensing": "docker.io/fsfe/reuse@sha256:85462a75c0f8efda09ddd190b92816b70e7662577c8427429e11e1b9f25a992e"
+}

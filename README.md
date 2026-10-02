@@ -109,3 +109,29 @@ Passing `--debug` or `-d` forces log level to `debug` and redirects log output f
 
 See [tooling/README.md](tooling/README.md) for presets, local dependency overrides, editor refresh,
 `task tooling:doctor`, and the independent Serena project.
+
+## Rehearse push CI locally
+
+Run `task ci` with Python 3, Git, Task, and Docker (or Podman when Docker is absent).
+An accessible container daemon and an amd64 host (or configured amd64 emulation)
+are required, and registry access is needed on the first run. All
+three required lanes run: a fresh Debug/Ninja build and all CTest tests, independent
+format/full tidy checks, and REUSE 6.2.0 licensing. Local and GitHub jobs use the
+same launcher, lane script, and immutable image references in `scripts/ci/images.json`.
+
+The snapshot includes current tracked files and non-ignored new files, omits deleted
+files and ignored outputs, and reports new inputs to add before pushing. Host inputs
+are mounted read-only; each lane copies them into a disposable writable container
+filesystem. Existing development builds are untouched. Application build artifacts
+are never reused; downloaded container layers may be cached. The image publication
+and release workflows remain remote operations.
+
+Each run prints its ignored `build/ci/<run>/` directory with full lane logs and
+`results.json` recording revision, dirty status, untracked inputs, runtime version,
+image digests and exit codes. Tool versions appear in the lane logs. Any required
+lane failure or missing runtime returns nonzero. Failed lane logs are also printed
+to the console, including in GitHub jobs. Use
+`python3 scripts/ci/run.py --lane static-checks` to investigate one lane; only the
+unfiltered `task ci` command rehearses all required push validation.
+
+Run launcher regressions with `python3 scripts/ci/test_launcher.py`.

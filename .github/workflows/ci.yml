@@ -6,48 +6,18 @@ on:
   pull_request:
     branches: ["main"]
 
-env:
-  BUILD_TYPE: Debug
-
 jobs:
   build-test:
     name: Build and test
     runs-on: ubuntu-24.04
-    container: ghcr.io/lebedenko/holonightd-ci:latest
-
     steps:
       - uses: actions/checkout@v4
-
-      - name: Configure
-        run: >
-          cmake -B build -G Ninja -S .
-          -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
-          -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-          -DBUILD_TESTS=ON
-
-      - name: Build
-        run: cmake --build build --parallel
-
-      - name: Test
-        run: ctest --test-dir build --output-on-failure --no-tests=error
-
+      - name: Build and test
+        run: python3 scripts/ci/run.py --lane build-test
   static-checks:
     name: Static checks
     runs-on: ubuntu-24.04
-    container: ghcr.io/lebedenko/holonightd-ci:latest
-
     steps:
       - uses: actions/checkout@v4
-
-      - name: Configure
-        run: >
-          cmake -B build -G Ninja -S .
-          -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
-          -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-          -DBUILD_TESTS=ON
-
-      - name: Format check
-        run: cmake --build build --target format-check
-
-      - name: Clang tidy
-        run: cmake --build build --target tidy
+      - name: Format and tidy
+        run: python3 scripts/ci/run.py --lane static-checks
