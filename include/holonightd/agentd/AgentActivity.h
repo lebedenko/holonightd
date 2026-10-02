@@ -32,7 +32,7 @@ enum class AgentState : std::uint8_t {
   WaitingForInput,
   Completed,
   Failed,
-  Cancelled
+  Cancelled,
 };
 
 [[nodiscard]] std::string toString(AgentState state);

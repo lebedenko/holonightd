@@ -37,7 +37,7 @@
 namespace holonightd {
 
 namespace {
-using json = nlohmann::json;
+using nlohmann::json;
 
 std::uint64_t nextFindingSequence() {
   static std::atomic<std::uint64_t> counter{1};
@@ -153,16 +153,16 @@ bool matchEventToCondition(const ObservationEvent& event, const RuleCondition& c
   if (condition.signal.has_value() && event.signal != *condition.signal) {
     return false;
   }
-  if (condition.min_severity.has_value()) {
-    if (static_cast<std::uint8_t>(event.severity) < static_cast<std::uint8_t>(*condition.min_severity)) {
-      return false;
-    }
+  if (condition.min_severity.has_value() &&
+      static_cast<std::uint8_t>(event.severity) < static_cast<std::uint8_t>(*condition.min_severity)) {
+    return false;
   }
-  if (condition.target_value.has_value()) {
-    if (!matchValueOperator(event.value, *condition.target_value, condition.value_operator)) {
-      return false;
-    }
+
+  if (condition.target_value.has_value() &&
+      !matchValueOperator(event.value, *condition.target_value, condition.value_operator)) {
+    return false;
   }
+
   return true;
 }
 
@@ -323,17 +323,20 @@ void RuleEngine::registerBuiltInRules() {
   kernel_rule.category = "kernel";
   kernel_rule.severity = Severity::Warning;
   kernel_rule.condition_logic = LogicOperator::All;
-  kernel_rule.conditions = {RuleCondition{
-      .source = std::nullopt,
-      .category = "package",
-      .subject = "kernel",
-      .signal = "pacman.kernel_mismatch",
-      .min_severity = Severity::Warning,
-      .target_value = std::nullopt,
-      .value_operator = MatchOperator::Equals,
-  }};
+  kernel_rule.conditions = {
+      RuleCondition{
+          .source = std::nullopt,
+          .category = "package",
+          .subject = "kernel",
+          .signal = "pacman.kernel_mismatch",
+          .min_severity = Severity::Warning,
+          .target_value = std::nullopt,
+          .value_operator = MatchOperator::Equals,
+      },
+  };
   kernel_rule.candidate_causes = {
-      "Kernel package was upgraded via pacman/system update but system has not been rebooted."};
+      "Kernel package was upgraded via pacman/system update but system has not been rebooted.",
+  };
   kernel_rule.suggested_actions = {"action.system.reboot_recommended", "action.pacman.check_pending_updates"};
   addRule(std::move(kernel_rule));
 
@@ -344,15 +347,17 @@ void RuleEngine::registerBuiltInRules() {
   pacman_lock_rule.category = "package";
   pacman_lock_rule.severity = Severity::Warning;
   pacman_lock_rule.condition_logic = LogicOperator::All;
-  pacman_lock_rule.conditions = {RuleCondition{
-      .source = std::nullopt,
-      .category = "package",
-      .subject = "pacman_db",
-      .signal = "pacman.stale_lock",
-      .min_severity = Severity::Warning,
-      .target_value = std::nullopt,
-      .value_operator = MatchOperator::Equals,
-  }};
+  pacman_lock_rule.conditions = {
+      RuleCondition{
+          .source = std::nullopt,
+          .category = "package",
+          .subject = "pacman_db",
+          .signal = "pacman.stale_lock",
+          .min_severity = Severity::Warning,
+          .target_value = std::nullopt,
+          .value_operator = MatchOperator::Equals,
+      },
+  };
   pacman_lock_rule.candidate_causes = {"Interrupted pacman transaction or dead process left orphan db.lck file."};
   pacman_lock_rule.suggested_actions = {"action.pacman.remove_stale_lock", "action.pacman.verify_db_integrity"};
   addRule(std::move(pacman_lock_rule));
@@ -426,15 +431,17 @@ void RuleEngine::registerBuiltInRules() {
   systemd_rule.category = "service";
   systemd_rule.severity = Severity::Error;
   systemd_rule.condition_logic = LogicOperator::All;
-  systemd_rule.conditions = {RuleCondition{
-      .source = std::nullopt,
-      .category = "systemd",
-      .subject = std::nullopt,
-      .signal = "unit_failed",
-      .min_severity = Severity::Warning,
-      .target_value = std::nullopt,
-      .value_operator = MatchOperator::Equals,
-  }};
+  systemd_rule.conditions = {
+      RuleCondition{
+          .source = std::nullopt,
+          .category = "systemd",
+          .subject = std::nullopt,
+          .signal = "unit_failed",
+          .min_severity = Severity::Warning,
+          .target_value = std::nullopt,
+          .value_operator = MatchOperator::Equals,
+      },
+  };
   systemd_rule.candidate_causes = {"System service entered failed state."};
   systemd_rule.suggested_actions = {"action.systemd.restart_unit", "action.systemd.inspect_unit_logs"};
   addRule(std::move(systemd_rule));

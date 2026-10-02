@@ -58,9 +58,11 @@ std::optional<AgentState> agentStateFromString(const std::string& str) {
 }
 
 nlohmann::json AgentEvent::toJson() const {
-  return nlohmann::json{{"provider", provider},       {"session_id", session_id},     {"project_path", project_path},
-                        {"terminal_id", terminal_id}, {"state", toString(state)},     {"title", title},
-                        {"message", message},         {"timestamp_ms", timestamp_ms}, {"metadata", metadata}};
+  return nlohmann::json{
+      {"provider", provider},       {"session_id", session_id},     {"project_path", project_path},
+      {"terminal_id", terminal_id}, {"state", toString(state)},     {"title", title},
+      {"message", message},         {"timestamp_ms", timestamp_ms}, {"metadata", metadata},
+  };
 }
 
 AgentEvent AgentEvent::fromJson(const nlohmann::json& json_obj) {

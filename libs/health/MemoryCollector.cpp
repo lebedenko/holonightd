@@ -260,25 +260,24 @@ std::vector<ObservationEvent> MemoryCollector::collect() {
       event.attributes_json = attr.dump();
       events.push_back(std::move(event));
     }
-  } else if (metrics.meminfo_success && metrics.percent_used.has_value()) {
-    if (*metrics.percent_used >= options_.meminfo_warning_threshold) {
-      ObservationEvent event;
-      event.source = "memory_collector";
-      event.category = "memory";
-      event.subject = "meminfo";
-      event.signal = "memory_used_high";
-      event.severity = Severity::Warning;
-      event.value = *metrics.percent_used;
+  } else if (metrics.meminfo_success && metrics.percent_used.has_value() &&
+             *metrics.percent_used >= options_.meminfo_warning_threshold) {
+    ObservationEvent event;
+    event.source = "memory_collector";
+    event.category = "memory";
+    event.subject = "meminfo";
+    event.signal = "memory_used_high";
+    event.severity = Severity::Warning;
+    event.value = *metrics.percent_used;
 
-      nlohmann::json attr = {
-          {"total_bytes", metrics.total_bytes},
-          {"available_bytes", metrics.available_bytes},
-          {"used_bytes", metrics.used_bytes},
-          {"percent_used", *metrics.percent_used},
-      };
-      event.attributes_json = attr.dump();
-      events.push_back(std::move(event));
-    }
+    nlohmann::json attr = {
+        {"total_bytes", metrics.total_bytes},
+        {"available_bytes", metrics.available_bytes},
+        {"used_bytes", metrics.used_bytes},
+        {"percent_used", *metrics.percent_used},
+    };
+    event.attributes_json = attr.dump();
+    events.push_back(std::move(event));
   }
 
   if (metrics.oom_kill_delta.has_value() && *metrics.oom_kill_delta > 0) {

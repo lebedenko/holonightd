@@ -52,7 +52,7 @@ ActivationResult ShellActivationClient::activate(const ActivationDescriptor& des
     return {.accepted = false, .diagnostic = ActivationDiagnostic::Unavailable};
   }
 
-  sd_bus_error error = SD_BUS_ERROR_NULL;
+  sd_bus_error error{};
   sd_bus_message* reply_raw = nullptr;
   result = sd_bus_call(bus_, request.get(), static_cast<std::uint64_t>(kTimeout.count()) * 1000, &error, &reply_raw);
   sd_bus_error_free(&error);

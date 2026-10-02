@@ -36,7 +36,7 @@ namespace holonightd {
 
 namespace {
 
-using json = nlohmann::json;
+using nlohmann::json;
 
 std::string unescapeMountPath(std::string_view str) {
   std::string result;
@@ -59,13 +59,15 @@ bool isVirtualFstype(std::string_view fstype) {
   static const std::unordered_set<std::string_view> kVirtualFstypes = {
       "proc",     "sysfs",      "tmpfs", "devtmpfs",   "cgroup",   "cgroup2", "overlay",     "squashfs",
       "devpts",   "securityfs", "bpf",   "pstore",     "tracefs",  "autofs",  "mqueue",      "hugetlbfs",
-      "configfs", "debugfs",    "ramfs", "rpc_pipefs", "efivarfs", "fusectl", "binfmt_misc", "fuse"};
+      "configfs", "debugfs",    "ramfs", "rpc_pipefs", "efivarfs", "fusectl", "binfmt_misc", "fuse",
+  };
   return kVirtualFstypes.contains(fstype) || fstype.starts_with("fuse.");
 }
 
 bool isNetworkFstype(std::string_view fstype) {
-  static const std::unordered_set<std::string_view> kNetworkFstypes = {"nfs",   "nfs4",  "cifs",
-                                                                       "smbfs", "sshfs", "fuse.sshfs"};
+  static const std::unordered_set<std::string_view> kNetworkFstypes = {
+      "nfs", "nfs4", "cifs", "smbfs", "sshfs", "fuse.sshfs",
+  };
   return kNetworkFstypes.contains(fstype);
 }
 

@@ -90,7 +90,7 @@ int main(int argc, char** argv) {
   });
 
   sd_bus_message* reply_ptr = nullptr;
-  sd_bus_error bus_error = SD_BUS_ERROR_NULL;
+  sd_bus_error bus_error{};
 
   std::string state_str = holonightd::agent::toString(event.state);
   // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg)

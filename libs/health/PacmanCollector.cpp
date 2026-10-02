@@ -33,7 +33,7 @@
 namespace holonightd {
 
 namespace {
-using json = nlohmann::json;
+using nlohmann::json;
 
 std::optional<std::string> readOsReleaseKernel(const std::filesystem::path& osrelease_path) {
   std::error_code fs_error;

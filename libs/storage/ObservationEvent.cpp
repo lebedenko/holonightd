@@ -10,7 +10,7 @@
 
 namespace holonightd {
 
-using json = nlohmann::json;
+using nlohmann::json;
 
 std::string severityToString(Severity severity) {
   switch (severity) {

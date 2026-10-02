@@ -192,7 +192,8 @@ const sd_bus_vtable agent_activity_vtable[] = {
     SD_BUS_SIGNAL("SessionChanged", "ssss", 0),
     SD_BUS_SIGNAL("SessionRemoved", "ss", 0),
     SD_BUS_SIGNAL("AttentionRequested", "ssss", 0),
-    SD_BUS_VTABLE_END};
+    SD_BUS_VTABLE_END,
+};
 #endif
 
 }  // namespace

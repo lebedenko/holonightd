@@ -35,7 +35,7 @@
 namespace holonightd {
 
 namespace {
-using json = nlohmann::json;
+using nlohmann::json;
 
 #ifdef HOLONIGHTD_HAS_SYSTEMD
 struct BusDeleter {
@@ -110,7 +110,7 @@ std::vector<ObservationEvent> SystemdCollector::collect() {
 #ifdef HOLONIGHTD_HAS_SYSTEMD
 void SystemdCollector::collectUnitEvents(sd_bus* bus_ptr, const std::chrono::system_clock::time_point& now,
                                          std::vector<ObservationEvent>& events) {
-  sd_bus_error error = SD_BUS_ERROR_NULL;
+  sd_bus_error error{};
   sd_bus_message* reply_raw = nullptr;
 
   const int ret_call = sd_bus_call_method(  // NOLINT(cppcoreguidelines-pro-type-vararg)

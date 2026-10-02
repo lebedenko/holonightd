@@ -76,7 +76,7 @@ int main(int argc, char** argv) {
     });
 
     sd_bus_message* reply_ptr = nullptr;
-    sd_bus_error bus_error = SD_BUS_ERROR_NULL;
+    sd_bus_error bus_error{};
 
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg)
     sd_bus_call_method(bus_ptr, "org.holonight.AgentActivity1", "/org/holonight/AgentActivity1",
@@ -128,7 +128,7 @@ int main(int argc, char** argv) {
     });
 
     sd_bus_message* reply_ptr = nullptr;
-    sd_bus_error bus_error = SD_BUS_ERROR_NULL;
+    sd_bus_error bus_error{};
 
     std::string result = (WIFEXITED(exit_status) && WEXITSTATUS(exit_status) == 0) ? "Completed" : "Failed";
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg)

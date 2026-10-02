@@ -238,7 +238,7 @@ std::uint32_t NotificationBridge::sendNotification(const AgentSession& session, 
   sd_bus_message_append(msg_ptr, "i", -1);
 
   sd_bus_message* reply_ptr = nullptr;
-  sd_bus_error bus_error = SD_BUS_ERROR_NULL;
+  sd_bus_error bus_error{};
   ret_code = sd_bus_call(bus_, msg_ptr, 500000, &bus_error, &reply_ptr);
   if (ret_code < 0) {
     sd_bus_error_free(&bus_error);

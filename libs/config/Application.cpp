@@ -260,16 +260,14 @@ void parsePacmanSection(const toml::table& tbl, Config& config) {
   if (const auto* val = pacman_table->get_as<std::string>("etc_path")) {
     config.pacman.etc_path = val->get();
   }
-  if (const auto* val = pacman_table->get_as<int64_t>("max_depth")) {
-    if (val->get() >= 0) {
-      config.pacman.max_depth = static_cast<unsigned int>(val->get());
-    }
+  if (const auto* val = pacman_table->get_as<int64_t>("max_depth"); val != nullptr && val->get() >= 0) {
+    config.pacman.max_depth = static_cast<unsigned int>(val->get());
   }
-  if (const auto* val = pacman_table->get_as<int64_t>("warning_threshold")) {
-    if (val->get() >= 0) {
-      config.pacman.warning_threshold = static_cast<unsigned int>(val->get());
-    }
+
+  if (const auto* val = pacman_table->get_as<int64_t>("warning_threshold"); val != nullptr && val->get() >= 0) {
+    config.pacman.warning_threshold = static_cast<unsigned int>(val->get());
   }
+
   if (const auto* val = pacman_table->get_as<bool>("check_kernel")) {
     config.pacman.check_kernel = val->get();
   }

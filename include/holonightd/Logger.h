@@ -31,7 +31,7 @@ enum class LogLevel : std::uint8_t {
   Debug = 7,  // Syslog LOG_DEBUG
   Info = 6,   // Syslog LOG_INFO
   Warn = 4,   // Syslog LOG_WARNING
-  Error = 3   // Syslog LOG_ERR
+  Error = 3,  // Syslog LOG_ERR
 };
 
 [[nodiscard]] LogLevel parseLogLevel(std::string_view level_str);

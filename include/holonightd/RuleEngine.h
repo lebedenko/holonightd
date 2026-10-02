@@ -39,7 +39,7 @@ enum class MatchOperator : std::uint8_t {
   LessThan,
   LessThanOrEqual,
   Contains,
-  Regex
+  Regex,
 };
 
 /// Converts MatchOperator to string representation.
