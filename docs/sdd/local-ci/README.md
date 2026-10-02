@@ -77,3 +77,9 @@ Clean container build/test and full static lanes pass after these corrections:
 third-party diagnostics contain no remaining actionable user-code findings.
 
 No publication or submodule updates are authorized.
+
+
+Rootless Podman uses `--userns=keep-id` so preserved private file modes remain
+readable under the requested UID/GID. A fake-runtime launcher regression verifies
+user mapping and the read-only input mount. Podman is not installed on this host;
+its real-runtime integration is unverified. The verified Docker path is unchanged.
