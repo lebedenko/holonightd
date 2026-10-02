@@ -69,7 +69,7 @@ scan_root = "."
 log_level = "info"  # "debug", "info", "warn", "error"
 commands = [
     "cmake --build build",
-    "ctest --test-dir build --output-on-failure",
+    "ctest --test-dir build/test --output-on-failure",
 ]
 
 [storage]
@@ -104,3 +104,8 @@ Log levels are resolved in strict order of precedence:
 4. Build-type default (`DEBUG` for Debug builds, `INFO` for Release builds)
 
 Passing `--debug` or `-d` forces log level to `debug` and redirects log output from systemd journal to standard output (`stdout`) formatted as `YYYY-MM-DDTHH:MM:SS%z LEVEL message`.
+
+## Standalone developer tooling
+
+See [tooling/README.md](tooling/README.md) for presets, local dependency overrides, editor refresh,
+`task tooling:doctor`, and the independent Serena project.

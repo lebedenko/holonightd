@@ -148,3 +148,6 @@ When working on this repository, AI agents must adhere to the following workflow
    - Always inspect existing header declarations and types in `include/holonightd/` before introducing or modifying API calls.
 4. **Preserve Documentation**:
    - Maintain existing docstrings and header comments. Update documentation whenever modifying signatures or behaviors.
+
+Developer tooling uses `build/debug`, `build/test`, `build/release` and module-owned `build/deps`.
+See tooling/README.md; run task tooling:refresh explicitly after configuring/building for editor metadata.

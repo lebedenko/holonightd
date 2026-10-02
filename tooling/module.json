@@ -1,0 +1,12 @@
+{
+  "module": "holonightd",
+  "cpp": true,
+  "qml": false,
+  "languages": [
+    "cpp",
+    "bash"
+  ],
+  "dependencies": [],
+  "qml_modules": [],
+  "wayland": false
+}
