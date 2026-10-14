@@ -1,6 +1,7 @@
 # Third-party notices
 
-| Path | Source | Revision | Copyright | License | Modifications |
-|---|---|---|---|---|---|
-| `third_party/nlohmann/json.hpp` | [JSON for Modern C++](https://github.com/nlohmann/json) | 3.12.0 | 2013–2025 Niels Lohmann | MIT | Vendored single-header distribution; no local modifications. |
-| `third_party/toml.hpp` | [toml++](https://github.com/marzer/tomlplusplus) | 3.4.0 | Mark Gillard | MIT | Vendored amalgamated header; no local modifications. |
+JSON for Modern C++ (MIT, Niels Lohmann) and toml++ (MIT, Mark Gillard) are
+installed build prerequisites. Their headers are provided by the environment;
+this repository no longer distributes vendored copies. toml++ >=3.4 is required.
+SQLite3 and optional libsystemd are resolved from installed packages.
+Google Test >=1.14 with Google Mock is required only when BUILD_TESTS is ON.

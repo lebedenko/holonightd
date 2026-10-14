@@ -11,7 +11,7 @@ target_link_libraries(holonight-agent-event
         holonight_agent
 )
 
-if(TARGET PkgConfig::LIBSYSTEMD)
+if(BUILD_SYSTEMD)
     target_link_libraries(holonight-agent-event PRIVATE PkgConfig::LIBSYSTEMD)
 endif()
 

@@ -67,7 +67,8 @@ tasks:
   coverage:
     desc: Build coverage report
     cmds:
-    - task: configure-coverage
+    - python3 tooling/workflow.py build --preset coverage
+    - ctest --test-dir build/coverage --output-on-failure --no-tests=error
     - cmake --build build/coverage --target coverage
   format:
     desc: format using standalone tooling
@@ -90,20 +91,9 @@ tasks:
     cmds:
     - python3 tooling/workflow.py tidy --scope tests
   tidy-container:
-    desc: Run static checks inside the CI container (Docker/Podman) for predictable results
+    desc: Run static checks in the pinned offline environment
     cmds:
-    - "if command -v docker >/dev/null 2>&1; then\n  CONTAINER_RUNNER=\"docker\"\nelif command -v podman >/dev/null 2>&1;\
-      \ then\n  CONTAINER_RUNNER=\"podman\"\nelse\n  echo \"ERROR: Neither docker nor podman is available.\" >&2\n  exit 1\n\
-      fi\n$CONTAINER_RUNNER run --rm -v \"$(pwd):/workspace\" -w /workspace ghcr.io/lebedenko/holonightd-ci:latest bash -c\
-      \ \"\n  rm -rf build-ci-check &&\n  cmake -B build-ci-check -G Ninja -S . -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON\
-      \ -DBUILD_TESTS=ON &&\n  cmake --build build-ci-check --target format-check &&\n  cmake --build build-ci-check --target\
-      \ tidy\n\"\n"
-  build-ci-image:
-    desc: Build the CI container image locally
-    cmds:
-    - "if command -v docker >/dev/null 2>&1; then\n  CONTAINER_RUNNER=\"docker\"\nelif command -v podman >/dev/null 2>&1;\
-      \ then\n  CONTAINER_RUNNER=\"podman\"\nelse\n  echo \"ERROR: Neither docker nor podman is available.\" >&2\n  exit 1\n\
-      fi\n$CONTAINER_RUNNER build -t ghcr.io/lebedenko/holonightd-ci:latest -f Dockerfile.ci .\n"
+    - python3 scripts/ci/run.py --lane static-checks
   clean:
     desc: Remove the build directory
     cmds:

@@ -114,17 +114,19 @@ See [tooling/README.md](tooling/README.md) for presets, local dependency overrid
 
 Run `task ci` with Python 3, Git, Task, and Docker (or Podman when Docker is absent).
 An accessible container daemon and an amd64 host (or configured amd64 emulation)
-are required, and registry access is needed on the first run. All
-three required lanes run: a fresh Debug/Ninja build and all CTest tests, independent
-format/full tidy checks, and REUSE 6.2.0 licensing. Local and GitHub jobs use the
+are required, and registry access is needed for explicit image preparation. All
+six required lanes run: clean Debug builds and all CTest tests with systemd ON/OFF,
+Release/tests-OFF staged installation, coverage, independent format/full tidy, and
+REUSE 6.2.0 licensing. Local and GitHub jobs use the
 same launcher, lane script, and immutable image references in `scripts/ci/images.json`.
 
 The snapshot includes current tracked files and non-ignored new files, omits deleted
 files and ignored outputs, and reports new inputs to add before pushing. Host inputs
 are mounted read-only; each lane copies them into a disposable writable container
 filesystem. Existing development builds are untouched. Application build artifacts
-are never reused; downloaded container layers may be cached. The image publication
-and release workflows remain remote operations.
+are never reused; container layers may be cached. The launcher explicitly pulls pinned
+images before running containers with `--pull=never --network=none`. The release build gate
+uses the same Release acceptance lane. Project-specific mutable images are retired.
 
 Each run prints its ignored `build/ci/<run>/` directory with full lane logs and
 `results.json` recording revision, dirty status, untracked inputs, runtime version,
@@ -135,3 +137,24 @@ to the console, including in GitHub jobs. Use
 unfiltered `task ci` command rehearses all required push validation.
 
 Run launcher regressions with `python3 scripts/ci/test_launcher.py`.
+
+## Installed dependencies
+
+Use C++23, CMake >=3.25, Ninja, SQLite3, nlohmann-json, toml++ >=3.4 and
+libsystemd. Tests require installed GTest >=1.14 CONFIG with GTest/GMock targets.
+Task, clang-format, clang-tidy, Python and REUSE support development; gcovr is
+required only for coverage. The canonical declarations are in `tooling/module.json`.
+
+Run `task deps PRESET=test` to validate installed prerequisites explicitly. There
+are no internal source providers and no packages are downloaded or installed by
+this command. Configure/build/test commands also never acquire dependencies.
+Use `HOLONIGHT_EXTERNAL_PREFIX` for installed external packages, including paths
+with spaces; `HOLONIGHT_DEPENDENCY_PREFIX` is reserved for internal providers.
+Incompatible build caches are preserved as `build/<preset>.previous-N`.
+
+`BUILD_SYSTEMD` defaults ON and requires libsystemd. Set
+`HOLONIGHT_BUILD_FEATURES='BUILD_SYSTEMD=OFF'` for Task commands, or
+`-DBUILD_SYSTEMD=OFF` for direct CMake, to disable its discovery, linkage and
+compile definitions. Existing stdout/standalone fallbacks and unit-file
+installation remain available. Run `task coverage` for instrumented tests and
+the HTML report under `build/coverage/coverage`.

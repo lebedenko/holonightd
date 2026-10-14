@@ -18,6 +18,7 @@
 
 namespace holonightd::agent {
 
+#ifdef HOLONIGHTD_HAS_SYSTEMD
 namespace {
 
 std::string formatProviderName(const std::string& provider) {
@@ -110,6 +111,7 @@ std::string truncateMessage(std::string_view message, std::size_t max_len = 200)
 }
 
 }  // namespace
+#endif
 
 NotificationBridge::NotificationBridge(
 #ifdef HOLONIGHTD_HAS_SYSTEMD

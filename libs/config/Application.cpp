@@ -28,7 +28,7 @@
 // NOLINTBEGIN
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-literal-operator"
-#include <toml.hpp>
+#include <toml++/toml.hpp>
 #pragma GCC diagnostic pop
 // NOLINTEND
 

@@ -71,6 +71,8 @@ class LauncherTests(unittest.TestCase):
             self.assertEqual(launcher.main(), 0)
         command = json.loads(arguments.read_text())
         self.assertIn('--userns=keep-id', command)
+        self.assertIn('--network=none', command)
+        self.assertIn('--pull=never', command)
         self.assertEqual(command[command.index('--user') + 1], '1000:1000')
         self.assertTrue(command[command.index('--mount') + 1].endswith(',dst=/input,readonly'))
 
@@ -80,12 +82,25 @@ class LauncherTests(unittest.TestCase):
         result = json.loads(next((self.root / 'build/ci').glob('*/results.json')).read_text())
         self.assertIn('Neither Docker nor Podman', result['error'])
 
+    def test_failed_image_preparation_starts_no_lanes(self):
+        scripts = self.root / 'scripts/ci'
+        scripts.mkdir(parents=True)
+        (scripts / 'images.json').write_text('{"build":"build@sha256:fixture","licensing":"reuse@sha256:fixture"}')
+        runtime = Path(self.temporary.name) / 'docker'
+        runtime.write_text('#!/bin/sh\nif [ "$1" = --version ]; then echo fake-runtime; exit 0; fi\nexit 19\n')
+        runtime.chmod(0o755)
+        with patch.object(launcher.shutil, 'which', return_value=str(runtime)), patch('sys.argv', ['ci']):
+            self.assertEqual(launcher.main(), 1)
+        result = json.loads(next((self.root / 'build/ci').glob('*/results.json')).read_text())
+        self.assertEqual(result['lanes'], {})
+        self.assertIn('pull', result['error'])
+
     def test_every_failed_lane_fails_task_and_remaining_lanes_run(self):
         scripts = self.root / 'scripts/ci'
         scripts.mkdir(parents=True)
         (scripts / 'images.json').write_text('{"build":"build@sha256:fixture","licensing":"reuse@sha256:fixture"}')
         runtime = Path(self.temporary.name) / 'docker'
-        runtime.write_text('#!/bin/sh\nif [ "$1" = --version ]; then echo fake-runtime; exit 0; fi\nexit 17\n')
+        runtime.write_text('#!/bin/sh\nif [ "$1" = --version ]; then echo fake-runtime; exit 0; fi\nif [ "$1" = pull ] || [ "$1" = image ]; then exit 0; fi\nexit 17\n')
         runtime.chmod(0o755)
         with patch.object(launcher.shutil, 'which', return_value=str(runtime)), patch('sys.argv', ['ci']):
             self.assertEqual(launcher.main(), 1)

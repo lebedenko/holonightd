@@ -39,6 +39,7 @@ target_link_libraries(holonightd_tests
     PRIVATE
         holonightd_core
         GTest::gtest_main
+        GTest::gmock
 )
 
 # Mark GTest headers as system includes to suppress warnings from GTest internals

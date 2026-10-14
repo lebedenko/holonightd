@@ -8,5 +8,115 @@
   ],
   "dependencies": [],
   "qml_modules": [],
-  "wayland": false
+  "wayland": false,
+  "external_dependencies": [
+    {
+      "id": "sqlite",
+      "scope": [
+        "build"
+      ]
+    },
+    {
+      "id": "json",
+      "scope": [
+        "build"
+      ]
+    },
+    {
+      "id": "toml",
+      "scope": [
+        "build"
+      ],
+      "version": "3.4"
+    },
+    {
+      "id": "systemd",
+      "scope": [
+        "build"
+      ],
+      "feature": "BUILD_SYSTEMD"
+    },
+    {
+      "id": "compiler",
+      "scope": [
+        "tool"
+      ]
+    },
+    {
+      "id": "cmake",
+      "scope": [
+        "tool"
+      ]
+    },
+    {
+      "id": "ninja",
+      "scope": [
+        "tool"
+      ]
+    },
+    {
+      "id": "pkgconf",
+      "scope": [
+        "tool"
+      ]
+    },
+    {
+      "id": "git",
+      "scope": [
+        "tool"
+      ]
+    },
+    {
+      "id": "python",
+      "scope": [
+        "tool"
+      ]
+    },
+    {
+      "id": "gtest",
+      "scope": [
+        "test"
+      ],
+      "targets": [
+        "GTest::gmock",
+        "GTest::gtest",
+        "GTest::gtest_main"
+      ]
+    },
+    {
+      "id": "task",
+      "scope": [
+        "tool"
+      ]
+    },
+    {
+      "id": "clang-format",
+      "scope": [
+        "tool"
+      ]
+    },
+    {
+      "id": "clang",
+      "scope": [
+        "tool"
+      ]
+    },
+    {
+      "id": "reuse",
+      "scope": [
+        "tool"
+      ]
+    },
+    {
+      "id": "gcovr",
+      "scope": [
+        "tool"
+      ],
+      "feature": "ENABLE_COVERAGE"
+    }
+  ],
+  "external_features": {
+    "BUILD_SYSTEMD": true,
+    "ENABLE_COVERAGE": false
+  }
 }

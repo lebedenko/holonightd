@@ -8,10 +8,10 @@ add_library(holonight_config
 target_include_directories(holonight_config
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/../include
-        ${CMAKE_CURRENT_SOURCE_DIR}/../third_party
 )
 target_link_libraries(holonight_config
     PUBLIC
+        tomlplusplus::tomlplusplus
         holonightd_project_options
         holonightd_project_warnings
 )
@@ -29,7 +29,7 @@ target_link_libraries(holonight_logging
         holonightd_project_options
         holonightd_project_warnings
 )
-if(TARGET PkgConfig::LIBSYSTEMD)
+if(BUILD_SYSTEMD)
     target_link_libraries(holonight_logging PRIVATE PkgConfig::LIBSYSTEMD)
 endif()
 
@@ -55,10 +55,10 @@ add_library(holonight_storage
 target_include_directories(holonight_storage
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/../include
-        ${CMAKE_CURRENT_SOURCE_DIR}/../third_party
 )
 target_link_libraries(holonight_storage
     PUBLIC
+        nlohmann_json::nlohmann_json
         holonightd_project_options
         holonightd_project_warnings
         SQLite3::SQLite3
@@ -80,10 +80,10 @@ add_library(holonight_health
 target_include_directories(holonight_health
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/../include
-        ${CMAKE_CURRENT_SOURCE_DIR}/../third_party
 )
 target_link_libraries(holonight_health
     PUBLIC
+        nlohmann_json::nlohmann_json
         holonightd_project_options
         holonightd_project_warnings
         holonight_config
@@ -91,7 +91,7 @@ target_link_libraries(holonight_health
         holonight_process
         holonight_storage
 )
-if(TARGET PkgConfig::LIBSYSTEMD)
+if(BUILD_SYSTEMD)
     target_link_libraries(holonight_health PRIVATE PkgConfig::LIBSYSTEMD)
 endif()
 
@@ -109,15 +109,15 @@ add_library(holonight_agent
 target_include_directories(holonight_agent
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/../include
-        ${CMAKE_CURRENT_SOURCE_DIR}/../third_party
 )
 target_link_libraries(holonight_agent
     PUBLIC
+        nlohmann_json::nlohmann_json
         holonightd_project_options
         holonightd_project_warnings
         holonight_logging
 )
-if(TARGET PkgConfig::LIBSYSTEMD)
+if(BUILD_SYSTEMD)
     target_link_libraries(holonight_agent PRIVATE PkgConfig::LIBSYSTEMD)
 endif()
 

@@ -14,23 +14,10 @@ jobs:
   build-gate:
     name: Build gate
     runs-on: ubuntu-24.04
-    container: ghcr.io/lebedenko/holonightd-ci:latest
-
     steps:
       - uses: actions/checkout@v4
-
-      - name: Configure
-        run: >
-          cmake -B build -G Ninja -S .
-          -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
-          -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-          -DBUILD_TESTS=ON
-
-      - name: Build
-        run: cmake --build build --parallel
-
-      - name: Test
-        run: ctest --test-dir build --output-on-failure --no-tests=error
+      - name: Offline release acceptance
+        run: python3 scripts/ci/run.py --lane release
 
   publish:
     name: Publish release

@@ -20,7 +20,7 @@ cmake_minimum_required(VERSION 3.25)
 project(holonightd VERSION 0.1.0 LANGUAGES CXX)
 
 include(GNUInstallDirs)
-install(FILES LICENSE THIRD_PARTY_NOTICES.md LICENSES/GPL-3.0-or-later.txt LICENSES/MIT.txt
+install(FILES LICENSE THIRD_PARTY_NOTICES.md LICENSES/GPL-3.0-or-later.txt
   DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/${PROJECT_NAME}")
 
 set(CMAKE_CXX_STANDARD 23)
@@ -30,21 +30,18 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 include(GNUInstallDirs)
 
+include(tooling/module.cmake)
 find_package(SQLite3 REQUIRED)
-
-find_package(PkgConfig QUIET)
-if(PKG_CONFIG_FOUND)
-  pkg_check_modules(LIBSYSTEMD QUIET IMPORTED_TARGET libsystemd)
-endif()
-
-
-if(LIBSYSTEMD_FOUND)
-  message(STATUS "libsystemd found. Enabling systemd journal logging sink.")
+find_package(nlohmann_json CONFIG REQUIRED)
+find_package(tomlplusplus 3.4 CONFIG REQUIRED)
+option(BUILD_SYSTEMD "Enable systemd journal and notification support" ON)
+if(BUILD_SYSTEMD)
+  find_package(PkgConfig REQUIRED)
+  pkg_check_modules(LIBSYSTEMD REQUIRED IMPORTED_TARGET libsystemd)
   add_compile_definitions(HOLONIGHTD_HAS_SYSTEMD)
 else()
-  message(STATUS "libsystemd not found. Falling back to stdout logging sink.")
+  message(STATUS "Systemd support disabled; using existing fallback behavior.")
 endif()
-
 
 option(HOLONIGHTD_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" OFF)
 
@@ -83,21 +80,12 @@ endif()
 if(BUILD_TESTS)
   enable_testing()
 
-  find_package(GTest CONFIG QUIET)
-  if(NOT GTest_FOUND OR NOT TARGET GTest::gtest OR NOT TARGET GTest::gmock)
-    include(FetchContent)
-    FetchContent_Declare(
-      googletest
-      GIT_REPOSITORY https://github.com/google/googletest.git
-      GIT_TAG        v1.14.0
-    )
-    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-    set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
-    FetchContent_MakeAvailable(googletest)
-    if(TARGET gtest)
-      set_target_properties(gtest gtest_main gmock gmock_main PROPERTIES CXX_CLANG_TIDY "")
+  find_package(GTest 1.14 CONFIG REQUIRED)
+  foreach(target GTest::gtest GTest::gtest_main GTest::gmock)
+    if(NOT TARGET ${target})
+      message(FATAL_ERROR "Installed GTest must provide ${target}. Run task deps to validate prerequisites.")
     endif()
-  endif()
+  endforeach()
 
   if(ENABLE_COVERAGE)
     find_program(GCOVR gcovr REQUIRED)
@@ -106,19 +94,18 @@ if(BUILD_TESTS)
       COMMENT "Cleaning stale gcov counters"
       VERBATIM
     )
-    target_compile_options(holonightd_core PRIVATE --coverage)
-    target_link_options(holonightd_core PRIVATE --coverage)
-    if(TARGET holonight-healthd)
-      target_compile_options(holonight-healthd PRIVATE --coverage)
-      target_link_options(holonight-healthd PRIVATE --coverage)
-    endif()
+    foreach(target holonight_config holonight_logging holonight_process holonight_storage
+                   holonight_health holonight_agent
+                   holonight-healthd holonight-agentd holonight-agent-event hn-agent-run)
+      target_compile_options(${target} PRIVATE --coverage)
+      target_link_options(${target} PUBLIC --coverage)
+    endforeach()
 
     add_custom_target(coverage
       COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/coverage
       COMMAND ${GCOVR} -r ${CMAKE_SOURCE_DIR} --object-directory=${CMAKE_BINARY_DIR}
               --html-details ${CMAKE_BINARY_DIR}/coverage/index.html
-              -e '${CMAKE_SOURCE_DIR}/tests/'
-              -e '${CMAKE_SOURCE_DIR}/third_party/'
+              --exclude "${CMAKE_SOURCE_DIR}/tests/"
       WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
       COMMENT "Generating coverage report"
       VERBATIM
@@ -126,6 +113,10 @@ if(BUILD_TESTS)
   endif()
 
   add_subdirectory(tests)
+  if(ENABLE_COVERAGE)
+    target_compile_options(holonightd_tests PRIVATE --coverage)
+    target_link_options(holonightd_tests PRIVATE --coverage)
+  endif()
 endif()
 
 # ============================================================

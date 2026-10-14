@@ -12,7 +12,7 @@ target_link_libraries(holonight-agentd
         holonight_logging
 )
 
-if(TARGET PkgConfig::LIBSYSTEMD)
+if(BUILD_SYSTEMD)
     target_link_libraries(holonight-agentd PRIVATE PkgConfig::LIBSYSTEMD)
 endif()
 
