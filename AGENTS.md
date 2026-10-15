@@ -57,8 +57,7 @@ All standard operations are managed via [`go-task`](https://taskfile.dev) (`task
 
 ### Configuration & Build
 ```sh
-task configure        # Debug build (no tests)
-task configure-tests  # Debug build with GTest enabled
+task configure        # Debug build with GTest enabled
 task build            # Compile Debug build
 task build:release    # Configure & compile Release build
 task clean            # Wipe build directory
@@ -71,7 +70,7 @@ task run              # Run holonightd once with config/holonightd.example.toml
 
 ### Testing & Coverage
 ```sh
-task test             # Configure-tests, compile, and run CTest suite
+task test             # Configure, compile, and run CTest suite
 task coverage         # Generate gcovr HTML coverage report
 ```
 
@@ -80,9 +79,6 @@ task coverage         # Generate gcovr HTML coverage report
 task format           # Format C++ sources in-place with clang-format
 task format-check     # Validate formatting without mutating files
 task tidy             # Run clang-tidy across all sources and tests
-task tidy-src         # Run clang-tidy on src/ only
-task tidy-tests       # Run clang-tidy on tests/ only
-task tidy-container   # Run format & tidy checks inside CI container (Docker/Podman)
 ```
 
 ---
@@ -141,7 +137,7 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/):
 When working on this repository, AI agents must adhere to the following workflow rules:
 
 1. **Verify Before Completion**:
-   - Always run `task format` (or `task format-check`), `task tidy-src`, and `task test` before declaring any task complete.
+   - Always run `task format` (or `task format-check`), `task tidy`, and `task test` before declaring any task complete.
 2. **Root Cause Analysis**:
    - Do not mask failing tests, suppress exceptions blindly, or delete test assertions. Inspect compiler output and test failure tracebacks to address the underlying issue.
 3. **No Speculative Implementation**:
@@ -149,5 +145,22 @@ When working on this repository, AI agents must adhere to the following workflow
 4. **Preserve Documentation**:
    - Maintain existing docstrings and header comments. Update documentation whenever modifying signatures or behaviors.
 
-Developer tooling uses `build/debug`, `build/test`, `build/release` and module-owned `build/deps`.
-See tooling/README.md; run task tooling:refresh explicitly after configuring/building for editor metadata.
+
+
+## Development and documentation
+
+Use `task build` and `task test` for incremental native CMake/CTest work. Native builds
+consume installed packages; use `CMAKE_PREFIX_PATH` for an explicit development prefix.
+Use `task format` for the pinned formatter and `task check` for container acceptance.
+Run `task check:integration` for installation/runtime changes. Container builds use
+fresh build/prefix directories, separate from `build/dev` and `build/release`.
+clangd reads `build/dev/compile_commands.json` directly.
+
+Routine changes need tests and a commit explanation; update user documentation when
+behavior changes. Substantial designs need one local SDD describing intent, decisions,
+interfaces and acceptance. Cross-project changes need one umbrella note linking local
+designs and stating contracts, dependency order and integration checks. Historical SDDs
+remain historical. No separate planning, readiness, handoff or closure commits are required.
+Keep routine logs and generated evidence in ignored build directories or CI artifacts.
+Provider and consumer implementation may proceed together; publish providers before
+consumer commits that reference them. Update umbrella pins per coherent milestone.

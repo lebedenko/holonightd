@@ -1,5 +1,7 @@
 # holonightd
 
+For current build, test, container acceptance and provider workflows, see [DEVELOPMENT.md](DEVELOPMENT.md).
+
 `holonightd` is a C++23 Linux daemon workspace with two focused services:
 
 - `holonight-healthd` collects system health observations, persists them in SQLite, evaluates diagnostic rules, and runs configured maintenance checks.
@@ -26,7 +28,7 @@ Without `--once`, the daemon loops until it receives `SIGINT` or `SIGTERM`.
 ```sh
 task test
 task format-check
-task tidy-src
+task tidy
 ```
 
 Apply formatting in-place:
@@ -69,7 +71,7 @@ scan_root = "."
 log_level = "info"  # "debug", "info", "warn", "error"
 commands = [
     "cmake --build build",
-    "ctest --test-dir build/test --output-on-failure",
+    "ctest --test-dir build/dev --output-on-failure",
 ]
 
 [storage]
@@ -105,20 +107,9 @@ Log levels are resolved in strict order of precedence:
 
 Passing `--debug` or `-d` forces log level to `debug` and redirects log output from systemd journal to standard output (`stdout`) formatted as `YYYY-MM-DDTHH:MM:SS%z LEVEL message`.
 
-## Standalone developer tooling
-
-See [tooling/README.md](tooling/README.md) for presets, local dependency overrides, editor refresh,
-`task tooling:doctor`, and the independent Serena project.
-
 ## Rehearse push CI locally
 
-Run `task ci` with Python 3, Git, Task, and Docker (or Podman when Docker is absent).
-An accessible container daemon and an amd64 host (or configured amd64 emulation)
-are required, and registry access is needed for explicit image preparation. All
-six required lanes run: clean Debug builds and all CTest tests with systemd ON/OFF,
-Release/tests-OFF staged installation, coverage, independent format/full tidy, and
-REUSE 6.2.0 licensing. Local and GitHub jobs use the
-same launcher, lane script, and immutable image references in `scripts/ci/images.json`.
+See [DEVELOPMENT.md](DEVELOPMENT.md) for current native and container commands.
 
 The snapshot includes current tracked files and non-ignored new files, omits deleted
 files and ignored outputs, and reports new inputs to add before pushing. Host inputs
@@ -128,33 +119,10 @@ are never reused; container layers may be cached. The launcher explicitly pulls 
 images before running containers with `--pull=never --network=none`. The release build gate
 uses the same Release acceptance lane. Project-specific mutable images are retired.
 
-Each run prints its ignored `build/ci/<run>/` directory with full lane logs and
-`results.json` recording revision, dirty status, untracked inputs, runtime version,
-image digests and exit codes. Tool versions appear in the lane logs. Any required
-lane failure or missing runtime returns nonzero. Failed lane logs are also printed
-to the console, including in GitHub jobs. Use
-`python3 scripts/ci/run.py --lane static-checks` to investigate one lane; only the
-unfiltered `task ci` command rehearses all required push validation.
+See [DEVELOPMENT.md](DEVELOPMENT.md) for current native and container commands.
 
 Run launcher regressions with `python3 scripts/ci/test_launcher.py`.
 
 ## Installed dependencies
 
-Use C++23, CMake >=3.25, Ninja, SQLite3, nlohmann-json, toml++ >=3.4 and
-libsystemd. Tests require installed GTest >=1.14 CONFIG with GTest/GMock targets.
-Task, clang-format, clang-tidy, Python and REUSE support development; gcovr is
-required only for coverage. The canonical declarations are in `tooling/module.json`.
-
-Run `task deps PRESET=test` to validate installed prerequisites explicitly. There
-are no internal source providers and no packages are downloaded or installed by
-this command. Configure/build/test commands also never acquire dependencies.
-Use `HOLONIGHT_EXTERNAL_PREFIX` for installed external packages, including paths
-with spaces; `HOLONIGHT_DEPENDENCY_PREFIX` is reserved for internal providers.
-Incompatible build caches are preserved as `build/<preset>.previous-N`.
-
-`BUILD_SYSTEMD` defaults ON and requires libsystemd. Set
-`HOLONIGHT_BUILD_FEATURES='BUILD_SYSTEMD=OFF'` for Task commands, or
-`-DBUILD_SYSTEMD=OFF` for direct CMake, to disable its discovery, linkage and
-compile definitions. Existing stdout/standalone fallbacks and unit-file
-installation remain available. Run `task coverage` for instrumented tests and
-the HTML report under `build/coverage/coverage`.
+See [DEVELOPMENT.md](DEVELOPMENT.md) for current native and container commands.

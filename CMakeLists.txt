@@ -30,7 +30,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 include(GNUInstallDirs)
 
-include(tooling/module.cmake)
 find_package(SQLite3 REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 find_package(tomlplusplus 3.4 CONFIG REQUIRED)
@@ -175,35 +174,16 @@ install(FILES
           ${CMAKE_CURRENT_SOURCE_DIR}/systemd/holonight-services.target
         DESTINATION ${SYSTEMD_UNIT_DIR})
 
-
-
 # ============================================================
 # Format & Tidy Targets
 # ============================================================
 find_program(CLANG_FORMAT clang-format)
-find_program(CLANG_TIDY clang-tidy)
-find_program(RUN_CLANG_TIDY run-clang-tidy)
 
 file(GLOB_RECURSE ALL_SOURCE_FILES
     LIST_DIRECTORIES false
     CONFIGURE_DEPENDS
     include/*.h include/*.hpp apps/*.cpp apps/*.h apps/*.hpp libs/*.cpp libs/*.h libs/*.hpp tests/*.cpp tests/*.h tests/*.hpp
 )
-
-file(GLOB_RECURSE ALL_CXX_SRC_IMPL_FILES
-    LIST_DIRECTORIES false
-    CONFIGURE_DEPENDS
-    apps/*.cpp libs/*.cpp
-)
-
-
-file(GLOB_RECURSE ALL_CXX_TEST_IMPL_FILES
-    LIST_DIRECTORIES false
-    CONFIGURE_DEPENDS
-    tests/*.cpp
-)
-
-set(ALL_CXX_IMPL_FILES ${ALL_CXX_SRC_IMPL_FILES} ${ALL_CXX_TEST_IMPL_FILES})
 
 if(CLANG_FORMAT)
   add_custom_target(format
@@ -218,52 +198,9 @@ if(CLANG_FORMAT)
     )
 endif()
 
-if(CLANG_TIDY)
-  include(ProcessorCount)
-  ProcessorCount(TIDY_JOBS)
-  if(TIDY_JOBS EQUAL 0)
-    set(TIDY_JOBS 1)
-  endif()
-
-  set(TIDY_HIDE_PROGRESS_FLAG "")
-  if(RUN_CLANG_TIDY)
-    execute_process(
-      COMMAND ${RUN_CLANG_TIDY} --help
-      OUTPUT_VARIABLE RUN_CLANG_TIDY_HELP
-      ERROR_VARIABLE RUN_CLANG_TIDY_HELP
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    if(RUN_CLANG_TIDY_HELP MATCHES "-hide-progress")
-      set(TIDY_HIDE_PROGRESS_FLAG "-hide-progress")
-    endif()
-  endif()
-
-  function(add_holonight_tidy_target target_name target_sources)
-    if(RUN_CLANG_TIDY)
-      add_custom_target(${target_name}
-            COMMAND ${RUN_CLANG_TIDY}
-                -quiet
-                ${TIDY_HIDE_PROGRESS_FLAG}
-                -j ${TIDY_JOBS}
-                -p ${CMAKE_BINARY_DIR}
-                ${${target_sources}}
-            COMMENT "Running ${target_name}"
-            VERBATIM
-        )
-    else()
-      add_custom_target(${target_name}
-            COMMAND ${CLANG_TIDY} --quiet -p ${CMAKE_BINARY_DIR} ${${target_sources}}
-            COMMENT "Running ${target_name}"
-            VERBATIM
-        )
-    endif()
-  endfunction()
-
-  add_holonight_tidy_target(tidy-src ALL_CXX_SRC_IMPL_FILES)
-  add_holonight_tidy_target(tidy-tests ALL_CXX_TEST_IMPL_FILES)
-  add_holonight_tidy_target(tidy ALL_CXX_IMPL_FILES)
-
-  if(NOT RUN_CLANG_TIDY)
-    message(STATUS "run-clang-tidy was not found; tidy targets will use clang-tidy sequentially")
-  endif()
-endif()
+# Use the same direct compilation-database check as task tidy.
+add_custom_target(tidy
+  COMMAND python3 "${CMAKE_CURRENT_SOURCE_DIR}/scripts/quality.py" tidy --build "${CMAKE_BINARY_DIR}"
+  WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+  VERBATIM
+)

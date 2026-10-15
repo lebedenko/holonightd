@@ -16,8 +16,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - name: Offline release acceptance
-        run: python3 scripts/ci/run.py --lane release
+      - name: Container acceptance and Release integration
+        run: python3 scripts/ci/container.py integration
 
   publish:
     name: Publish release
